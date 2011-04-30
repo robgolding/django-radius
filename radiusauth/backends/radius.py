@@ -1,12 +1,12 @@
+import logging
+from StringIO import StringIO
+
 from pyrad.packet import AccessRequest, AccessAccept, AccessReject
 from pyrad.client import Client, Timeout
 from pyrad.dictionary import Dictionary
 
 from django.conf import settings
 from django.contrib.auth.models import User
-
-from StringIO import StringIO
-import logging
 
 DICTIONARY = u"""
 ATTRIBUTE User-Name     1 string
@@ -31,22 +31,35 @@ class RADIUSBackend(object):
     supports_anonymous_user = False
     supports_object_permissions = False
 
-    def __init__(self, *args, **kwargs):
-        secret = settings.RADIUS_SECRET.encode('utf-8')
-        self._radius_client = Client(server=settings.RADIUS_SERVER,
-                                     authport=settings.RADIUS_PORT,
-                                     secret=secret,
-                                     dict=Dictionary(StringIO(DICTIONARY)),
-                                    )
+    def __init__(self, server=None, port=None, secret=None):
+        self.server = server
+        self.port = port
+        self.secret = secret
+
+        if self.server is None:
+            self.server = settings.RADIUS_SERVER
+        if self.port is None:
+            self.port = settings.RADIUS_PORT
+        if self.secret is None:
+            self.secret = settings.RADIUS_SECRET
+        self.secret.encode('utf-8')
+
+        self.client = Client(server=self.server,
+                             authport=self.port,
+                             secret=self.secret,
+                             dict=Dictionary(StringIO(DICTIONARY)),
+                            )
+
+    def _get_dictionary(self):
+        return Dictionary(StringIO(DICTIONARY))
 
     def _get_auth_packet(self, username, password):
-        packet = self._radius_client.CreateAuthPacket(code=AccessRequest,
-                                                      User_Name=username)
-        packet["User-Password"] = packet.PwCrypt(password)
-        return packet
+        pkt = self.client.CreateAuthPacket(code=AccessRequest,
+                                           User_Name=username)
+        pkt["User-Password"] = pkt.PwCrypt(password)
+        return pkt
 
-
-    def authenticate(self, username=None, password=None):
+    def authenticate(self, username, password):
         """
         Check username against RADIUS server and return a User object or None.
         """
@@ -58,10 +71,10 @@ class RADIUSBackend(object):
         logging.debug("Sending RADIUS authentication packet: %s" % packet)
 
         try:
-            reply = self._radius_client.SendPacket(packet)
+            reply = self.client.SendPacket(packet)
         except Timeout, e:
             logging.error("RADIUS timeout occurred contacting %s:%s" % \
-                          (settings.RADIUS_SERVER, settings.RADIUS_PORT)
+                          (self.server, self.port)
                          )
             return None
         except Exception, e:
@@ -92,6 +105,3 @@ class RADIUSBackend(object):
             return User.objects.get(pk=user_id)
         except User.DoesNotExist:
             return None
-
-    def _get_dictionary(self):
-        return Dictionary(StringIO(DICTIONARY))
