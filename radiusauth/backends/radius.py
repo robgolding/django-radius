@@ -17,9 +17,19 @@ REALM_SEPARATOR = '@'
 
 def utf8_encode_args(f):
     """Decorator to encode string arguments as UTF-8"""
-    def encoded(*args):
+    def encoded(self, *args, **kwargs):
         nargs = [ arg.encode('utf-8') for arg in args ]
-        return f(*nargs)
+        nargs = []
+        for arg in args:
+            if isinstance(arg, basestring):
+                arg = arg.encode('utf-8')
+            nargs.append(arg)
+        nkwargs = {}
+        for key, val in kwargs.items():
+            if isinstance(val, basestring):
+                val = val.encode('utf-8')
+            nkwargs[key] = val
+        return f(self, *nargs, **nkwargs)
     return encoded
 
 class RADIUSBackend(object):
@@ -150,7 +160,7 @@ class RADIUSBackend(object):
         except User.DoesNotExist:
             return None
 
-class RADIUSRealmBackend(object):
+class RADIUSRealmBackend(RADIUSBackend):
     """
     Advanced realm-based RADIUS backend. Authenticates users with a username in
     the format <username>@<realm>, otherwise ignores the request so it can be
@@ -190,6 +200,10 @@ class RADIUSRealmBackend(object):
             return None
 
         server = self.get_server(realm)
+
+        if not server:
+            return None
+
         result = self._radius_auth(server, user, password)
 
         if result:
