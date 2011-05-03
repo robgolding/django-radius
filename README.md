@@ -2,13 +2,14 @@ django-radius
 =============
 
 django-radius enables you to authenticate your Django users against one or many
-RADIUS servers.
+RADIUS servers easily.
 
 RADIUS Authentication Backend
 -----------------------------
 
-The RADIUS backend allows you to hook into Django's authentication backends
-system in your `settings.py` file:
+The standard RADIUS backend (`radiusauth.backends.RADIUSBackend`) allows you to
+authenticate against a single RADIUS server easily, and is used by adding it to
+the `AUTHENTICATION_BACKENDS` parameter in your project's settings file:
 
     AUTHENTICATION_BACKENDS = (
         'django.contrib.auth.backends.ModelBackend',
@@ -16,59 +17,50 @@ system in your `settings.py` file:
     )
 
 This will first attempt to authenticate a user with the traditional Django
-model-based system, and failing that, the RADIUS server. In this instance, the
-RADIUS server is specified in `settings.py` also:
+model-based system, and failing that, the RADIUS server.
+
+The RADIUS server is specified in the settings file also, with the following
+parameters:
 
     RADIUS_SERVER = 'localhost'
     RADIUS_PORT = 1812
     RADIUS_SECRET = 'S3kr3T'
 
-Note that this only allows one RADIUS server to be configured, and is the
-simplest way to enable RADIUS authentication.
+This is the quickest and easiest way to enable simple, single-server RADIUS
+authentication for your Django project.
 
-RADIUS Authentication Form & Multiple RADIUS Servers
-----------------------------------------------------
+Realm-Based RADIUS Authentication for Multiple RADIUS Servers
+-------------------------------------------------------------
 
-django-radius also comes with a modified login view and authentication form,
-for use with a specialised RADIUS setup. This allows you to use a different
-RADIUS server to authenticate users, depending on some value in the `request`
-variable.
+For a more advanced system, you might want to authenticate users with different
+RADIUS servers, depending upon some arbitrary condition.
 
-This might seem contrived, but the idea is to separate "realms" of users by the
-URL by which they access your project. For example, people browsing to
+This might seem contrived, but the idea is to separate "realms" of users by,
+for example, the URL they access your project with. People browsing to
 http://client1.myproject.com might need to authenticate against one RADIUS
-server, whilst http://client2.myproject.com might need to authenticate against
-another.
+server, whilst people using http://client2.myproject.com might need to
+authenticate against another.
 
-To enable this functionality, there is no need to specify the backend in
-`settings.py`. Instead, point your login view to `radiusauth.views.login`, like
-so:
+The realm-based RADIUS authentication backend
+(`radiusauth.backends.RADIUSRealmBackend`) expects the username to be in
+a particular format: `<username>@<realm>`. The username and realm are
+separated, and the realm is used to determine which RADIUS server to
+authenticate against.
 
-    url(r'^login/$', 'radiusauth.views.login', {
-        'authentication_form': MyRADIUSAuthenticationForm,
-    }
+### Customised Functionality
 
-Notice that the extra variable `authentication_form` is also set. This is to
-allow you to specify your own login for determining the correct RADIUS server
-to use. For example:
+The `get_server` method of the backend class is used to determine which RADIUS
+server to authenticate against. This can be customised by extending the
+`RADIUSRealmBackend` class, and implementing this method. `get_server` takes
+one argument: the realm which was extracted from the username.
 
-    from radiusauth.forms import RADIUSAuthenticationForm
+By default, the `RADIUSRealmBackend` simply returns the RADIUS server details
+specified in the project's settings file.
 
-    class MyRADIUSAuthenticationForm(RADIUSAuthenticationForm):
-        def get_radius_settings(self, request):
-            if request.META['HTTP_HOST'] == 'client1.myproject.com':
-                # RADIUS server details for client1
-                return ('radius.client1.com', 1812, 'client1_secret')
-            elif request.META['HTTP_HOST'] == 'client2.myproject.com':
-                # RADIUS server details for client2
-                return ('radius.client2.com', 1812, 'client2_secret')
-            else:
-                # RADIUS authentication not allowed otherwise
-                return None
+To use your customised version of the `RADIUSRealmBackend`, just specify it in
+your settings file as above:
 
-All that is required is to override the `get_radius_settings` method, and have
-it return a 3-tuple containing `(<hostname>, <port>, <secret>)` which specifies
-the server which will be used to authenticate the user.
-
-By default, the `RADIUSAuthenticationForm` simply returns the RADIUS server
-details specified in the project's `settings.py`.
+    AUTHENTICATION_BACKENDS = (
+        'django.contrib.auth.backends.ModelBackend',
+        'myproject.users.MyRADIUSBackend',
+    )
