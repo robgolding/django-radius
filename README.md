@@ -107,7 +107,7 @@ RADIUS_SERVERS = {
     'client2.myproject.com': ('radius.client2.com', 1812, 'p@55w0Rd'),
 }
 
-class RADIUSBackend(RADIUSRealmBackend):
+class MyRADIUSBackend(RADIUSRealmBackend):
     def get_server(self, realm):
         if realm in RADIUS_SERVERS:
             return RADIUS_SERVERS[realm]
