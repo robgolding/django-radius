@@ -135,7 +135,7 @@ def login(request):
 ```python
 ...
 AUTHENTICATION_BACKENDS = (
-    'myproject.users.MyRADIUSBackend',
+    'myproject.users.backends.MyRADIUSBackend',
     'django.contrib.auth.backends.ModelBackend',
 )
 ...
