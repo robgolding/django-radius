@@ -135,7 +135,7 @@ def login(request):
 ```python
 ...
 AUTHENTICATION_BACKENDS = (
-    'myproject.user.MyRADIUSBackend',
+    'myproject.users.MyRADIUSBackend',
     'django.contrib.auth.backends.ModelBackend',
 )
 ...
@@ -143,6 +143,7 @@ AUTHENTICATION_BACKENDS = (
 
 The custom login view above alters the username in the POST data, so that when
 Django passes it to the authentication backend, it contains the correct value.
+
 In this example, the realm is set to be the HTTP host header which is
 determined by the URL the client uses to access the project, though this could
 be anything you like.
