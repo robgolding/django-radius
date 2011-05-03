@@ -11,10 +11,12 @@ The standard RADIUS backend (`radiusauth.backends.RADIUSBackend`) allows you to
 authenticate against a single RADIUS server easily, and is used by adding it to
 the `AUTHENTICATION_BACKENDS` parameter in your project's settings file:
 
-    AUTHENTICATION_BACKENDS = (
-        'django.contrib.auth.backends.ModelBackend',
-        'radiusauth.backends.RADIUSBackend',
-    )
+```python
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'radiusauth.backends.RADIUSBackend',
+)
+```
 
 This will first attempt to authenticate a user with the traditional Django
 model-based system, and failing that, the RADIUS server.
@@ -22,9 +24,11 @@ model-based system, and failing that, the RADIUS server.
 The RADIUS server is specified in the settings file also, with the following
 parameters:
 
-    RADIUS_SERVER = 'localhost'
-    RADIUS_PORT = 1812
-    RADIUS_SECRET = 'S3kr3T'
+```python
+RADIUS_SERVER = 'localhost'
+RADIUS_PORT = 1812
+RADIUS_SECRET = 'S3kr3T'
+```
 
 This is the quickest and easiest way to enable simple, single-server RADIUS
 authentication for your Django project.
@@ -60,7 +64,9 @@ specified in the project's settings file.
 To use your customised version of the `RADIUSRealmBackend`, just specify it in
 your settings file as above:
 
-    AUTHENTICATION_BACKENDS = (
-        'django.contrib.auth.backends.ModelBackend',
-        'myproject.users.MyRADIUSBackend',
-    )
+```python
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'myproject.users.MyRADIUSBackend',
+)
+```
