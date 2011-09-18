@@ -183,6 +183,16 @@ class RADIUSRealmBackend(RADIUSBackend):
         """
         return self._get_server_from_settings()
 
+    def construct_full_username(self, username, realm):
+        """
+        Construct a unique username for a user, given their normal username and
+        realm. This is to avoid conflicts in the Django auth app, as usernames
+        must be unique.
+
+        By default, returns a string in the format <username>@<realm>.
+        """
+        return '%s@%s' % (username, realm)
+
     @utf8_encode_args
     def authenticate(self, username, password, realm):
         """
@@ -199,6 +209,7 @@ class RADIUSRealmBackend(RADIUSBackend):
         result = self._radius_auth(server, username, password)
 
         if result:
-            return self.get_django_user(username, password)
+            full_username = self.construct_full_username(username, realm)
+            return self.get_django_user(full_username, password)
 
         return None

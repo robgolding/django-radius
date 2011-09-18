@@ -58,26 +58,28 @@ server, whilst people using http://client2.myproject.com might need to
 authenticate against another.
 
 The realm-based RADIUS authentication backend
-(`radiusauth.backends.RADIUSRealmBackend`) expects the username to be in
-a particular format: `<username>@<realm>`. The username and realm are
-separated, and the realm is used to determine which RADIUS server to
-authenticate against.
+(`radiusauth.backends.RADIUSRealmBackend`) expects to be provided with an extra
+argument when authenticating a user: the realm in which they belong.
+The realm is used to determine which RADIUS server to contact when verifying
+the user's credentials - though this logic is up to the developer to implement
+by overriding the `get_server` method.
 
 As with thee standard RADIUS backend, a `User` object is created in the Django
 auth application when a user successfully logs into the system. With the
-realm-based backend, however, the username is set to the *full* string passed
-to the backend (i.e. `<username>@<realm>`). This is to avoid clashes which may
-occur when authenticating against more than one RADIUS server. Simply be aware
-of this fact when displaying usernames in templates etc., as users might be
-confused by a username which looks similar to an email address, but is clearly
-not.
+realm-based backend, however, the username is set to the string returned by the
+`construct_full_username` method, which is supplied with the username and the
+realm. By default, this method returns a string in the format
+<username>@<realm> to avoid clashes in the Django user database. You should be
+aware of this fact when displaying usernames in templates etc., as users might
+be confused by a username which looks similar to an email address, but is
+clearly not.
 
 ### Customised Functionality
 
 The `get_server` method of the backend class is used to determine which RADIUS
 server to authenticate against. This can be customised by extending the
 `RADIUSRealmBackend` class, and implementing this method. `get_server` takes
-one argument: the realm which was extracted from the username.
+one argument: the realm which is passed to the `authenticate` method.
 
 By default, the `RADIUSRealmBackend` simply returns the RADIUS server details
 specified in the project's settings file.
@@ -114,20 +116,54 @@ class MyRADIUSBackend(RADIUSRealmBackend):
         return None
 ```
 
-`myproject/users/views.py`
+`myproject/users/forms.py`
 
 ```python
-from django.contrib.auth.views import login as auth_login
+from django import forms
 
-def login(request):
-    if request.method == 'POST':
-        cname = request.META.get('HTTP_HOST', None)
-        if cname and request.POST.get('username', None):
-            post_data = request.POST.copy()
-            post_data['username'] = '%s@%s' % \
-                    (request.POST['username'], cname)
-            request.POST = post_data
-    return auth_login(request)
+from django.contrib.auth import authenticate
+from django.contrib.auth.forms import AuthenticationForm
+
+class RADIUSAuthenticationForm(AuthenticationForm):
+    def __init__(self, realm, request, *args, **kwargs):
+        super(UserAuthenticationForm, self).__init__(request, *args, **kwargs)
+        self.realm = realm
+
+    def clean(self):
+        username = self.cleaned_data.get('username')
+        password = self.cleaned_data.get('password')
+
+        if self.realm and username and password:
+            self.user_cache = authenticate(realm=self.realm,
+                                           username=username,
+                                           password=password)
+            if self.user_cache is None:
+                raise forms.ValidationError(
+                    'Please enter a correct username and password. '
+                    'Note that both fields are case-sensitive.')
+            elif not self.user_cache.is_active:
+                raise forms.ValidationError('This account is inactive.')
+        self.check_for_test_cookie()
+        return self.cleaned_data
+
+    def get_user(self):
+        return self.user_cache
+```
+
+`myproject/users/urls.py`
+
+```python
+from django.conf.urls.defaults import patterns, url
+
+from myproject.users.forms import RADIUSAuthenticationForm
+
+urlpatterns = patterns('django.contrib.auth.views',
+
+    url(r'^login/$', 'login',
+        {'authentication_form': RADIUSAuthenticationForm},
+        name='radius_login'),
+
+)
 ```
 
 `myproject/settings.py`
@@ -141,9 +177,7 @@ AUTHENTICATION_BACKENDS = (
 ...
 ```
 
-The custom login view above alters the username in the POST data, so that when
-Django passes it to the authentication backend, it contains the correct value.
-
-In this example, the realm is set to be the HTTP host header which is
-determined by the URL the client uses to access the project, though this could
-be anything you like.
+The custom authentication form above is then instantiated with a `realm`
+argument (determined by some other means) which is then passed to Django's
+`authenticate` method. The `RADIUSRealmBackend` can then use this value to
+determine which RADIUS server to use when validating the user's credentials.
