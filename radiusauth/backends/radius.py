@@ -162,49 +162,41 @@ class RADIUSBackend(object):
 
 class RADIUSRealmBackend(RADIUSBackend):
     """
-    Advanced realm-based RADIUS backend. Authenticates users with a username in
-    the format <username>@<realm>, otherwise ignores the request so it can be
-    handled by another backend.
+    Advanced realm-based RADIUS backend. Authenticates users with a username,
+    password and a realm (simply a unique string). The server to authenticate
+    with is defined by the result of calling get_server(realm) on an instance
+    of this class.
 
-    The server to authenticate with is defined by the result of calling
-    get_server(realm), where `realm` is the portion of the username after the
-    '@' sign. For example, `user@example.com` has a realm of `example.com`.
-
-    By default, this class always uses the RADIUS server specified in the
-    settings file. Subclasses should override the `get_server` method to
-    provide their own logic. Return a 3-tuple (<hostname>, <port>, <secret>).
+    By default, this class uses the RADIUS server specified in the settings
+    file, regardless of the realm. Subclasses should override the `get_server`
+    method to provide their own logic. The method should return a 3-tuple:
+    (<hostname>, <port>, <secret>).
     """
-    def _parse_username(self, username):
-        """
-        Get the server details to use for a given username, assumed to be in
-        the format <username@realm>.
-        """
-        user, _, realm = username.rpartition(REALM_SEPARATOR)
-        if not user:
-            return (username, None)
-        return (user, realm)
-
     def get_server(self, realm):
+        """
+        Get the details of the RADIUS server to authenticate users of the given
+        realm.
+
+        Returns a 3-tuple (<hostname>, <port>, <secret>). Base implementation
+        always returns the RADIUS server specified in the main settings file,
+        and should be overridden.
+        """
         return self._get_server_from_settings()
 
     @utf8_encode_args
-    def authenticate(self, username, password):
+    def authenticate(self, username, password, realm):
         """
-        Check credentials against RADIUS server and return a User object or
-        None. Username is expected to be of the format <username>@<realm>. If
-        it isn't, return None.
+        Check credentials against the RADIUS server identified by `realm` and
+        return a User object or None. If no argument is supplied, Django will
+        skip this backend and try the next one (as a TypeError will be raised
+        and caught).
         """
-        user, realm = self._parse_username(username)
-
-        if not realm:
-            return None
-
         server = self.get_server(realm)
 
         if not server:
             return None
 
-        result = self._radius_auth(server, user, password)
+        result = self._radius_auth(server, username, password)
 
         if result:
             return self.get_django_user(username, password)
