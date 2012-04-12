@@ -142,7 +142,7 @@ class RADIUSBackend(object):
         Check credentials against RADIUS server and return a User object or
         None.
         """
-        server = self._get_server_from_settings(None)
+        server = self._get_server_from_settings()
         result = self._radius_auth(server, username, password)
 
         if result:
