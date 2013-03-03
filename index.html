@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Django RADIUS : A RADIUS authentication backend for Django" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Django RADIUS</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/robgolding63/django-radius">View on GitHub</a>
+
+          <h1 id="project_title">Django RADIUS</h1>
+          <h2 id="project_tagline">A RADIUS authentication backend for Django</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/robgolding63/django-radius/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/robgolding63/django-radius/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>Welcome</h1>
+
+<p>django-radius enables you to authenticate your Django users against one or many
+RADIUS servers easily.</p>
+
+<h2>RADIUS Authentication Backend</h2>
+
+<p>The standard RADIUS backend (<code>radiusauth.backends.RADIUSBackend</code>) allows you to
+authenticate against a single RADIUS server easily, and is used by adding it to
+the <code>AUTHENTICATION_BACKENDS</code> parameter in your project's settings file:</p>
+
+<div class="highlight"><pre><span class="n">AUTHENTICATION_BACKENDS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s">'radiusauth.backends.RADIUSBackend'</span><span class="p">,</span>
+    <span class="s">'django.contrib.auth.backends.ModelBackend'</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+
+<p>This will first attempt to authenticate a user with the traditional Django
+model-based system, and failing that, the RADIUS server.</p>
+
+<p>The RADIUS server is specified in the settings file also, with the following
+parameters:</p>
+
+<div class="highlight"><pre><span class="n">RADIUS_SERVER</span> <span class="o">=</span> <span class="s">'localhost'</span>
+<span class="n">RADIUS_PORT</span> <span class="o">=</span> <span class="mi">1812</span>
+<span class="n">RADIUS_SECRET</span> <span class="o">=</span> <span class="s">'S3kr3T'</span>
+</pre></div>
+
+<p>When a user is successfully authenticated via the RADIUS backend, a <code>User</code>
+object is created in Django's built-in auth application with the same username.
+This user's password is set to the password which they logged into the RADIUS
+server with, so that they will be able to login with their "cached"
+credentials, even if the RADIUS server is down. All activity within the Django
+project can then be linked to this <code>User</code> object via foreign keys etc.</p>
+
+<p>This is why the <code>RADIUSBackend</code> appears <em>before</em> the Django <code>ModelBackend</code> - so
+that when users change their passwords on the RADIUS system, they are still
+able to login to the Django application (and their cached credentials are
+updated).</p>
+
+<p>This is the quickest and easiest way to enable simple, single-server RADIUS
+authentication for your Django project.</p>
+
+<h2>Realm-Based RADIUS Authentication for Multiple RADIUS Servers</h2>
+
+<p>For a more advanced system, you might want to authenticate users with different
+RADIUS servers, depending upon some arbitrary condition.</p>
+
+<p>This might seem contrived, but the idea is to separate "realms" of users by,
+for example, the URL they access your project with. People browsing to
+<a href="http://client1.myproject.com">http://client1.myproject.com</a> might need to authenticate against one RADIUS
+server, whilst people using <a href="http://client2.myproject.com">http://client2.myproject.com</a> might need to
+authenticate against another.</p>
+
+<p>The realm-based RADIUS authentication backend
+(<code>radiusauth.backends.RADIUSRealmBackend</code>) expects to be provided with an extra
+argument when authenticating a user: the realm in which they belong.
+The realm is used to determine which RADIUS server to contact when verifying
+the user's credentials - though this logic is up to the developer to implement
+by overriding the <code>get_server</code> method.</p>
+
+<p>As with thee standard RADIUS backend, a <code>User</code> object is created in the Django
+auth application when a user successfully logs into the system. With the
+realm-based backend, however, the username is set to the string returned by the
+<code>construct_full_username</code> method, which is supplied with the username and the
+realm. By default, this method returns a string in the format
+@ to avoid clashes in the Django user database. You should be
+aware of this fact when displaying usernames in templates etc., as users might
+be confused by a username which looks similar to an email address, but is
+clearly not.</p>
+
+<h3>Customised Functionality</h3>
+
+<p>The <code>get_server</code> method of the backend class is used to determine which RADIUS
+server to authenticate against. This can be customised by extending the
+<code>RADIUSRealmBackend</code> class, and implementing this method. <code>get_server</code> takes
+one argument: the realm which is passed to the <code>authenticate</code> method.</p>
+
+<p>By default, the <code>RADIUSRealmBackend</code> simply returns the RADIUS server details
+specified in the project's settings file.</p>
+
+<p>To use your customised version of the <code>RADIUSRealmBackend</code>, just specify it in
+your settings file as above:</p>
+
+<div class="highlight"><pre><span class="n">AUTHENTICATION_BACKENDS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s">'myproject.users.MyRADIUSBackend'</span><span class="p">,</span>
+    <span class="s">'django.contrib.auth.backends.ModelBackend'</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+
+<h3>Example Project</h3>
+
+<p>Here is an example of how a project might be constructed to authenticate to two
+different RADIUS servers.</p>
+
+<p><code>myproject/users/backends.py</code></p>
+
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">radiusauth.backends</span> <span class="kn">import</span> <span class="n">RADIUSRealmBackend</span>
+
+<span class="n">RADIUS_SERVERS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">'client1.myproject.com'</span><span class="p">:</span> <span class="p">(</span><span class="s">'radius.client1.com'</span><span class="p">,</span> <span class="mi">1812</span><span class="p">,</span> <span class="s">'S3kr3T'</span><span class="p">),</span>
+    <span class="s">'client2.myproject.com'</span><span class="p">:</span> <span class="p">(</span><span class="s">'radius.client2.com'</span><span class="p">,</span> <span class="mi">1812</span><span class="p">,</span> <span class="s">'p@55w0Rd'</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="k">class</span> <span class="nc">MyRADIUSBackend</span><span class="p">(</span><span class="n">RADIUSRealmBackend</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_server</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">realm</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">realm</span> <span class="ow">in</span> <span class="n">RADIUS_SERVERS</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">RADIUS_SERVERS</span><span class="p">[</span><span class="n">realm</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">None</span>
+</pre></div>
+
+<p><code>myproject/users/forms.py</code></p>
+
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
+
+<span class="kn">from</span> <span class="nn">django.contrib.auth</span> <span class="kn">import</span> <span class="n">authenticate</span>
+<span class="kn">from</span> <span class="nn">django.contrib.auth.forms</span> <span class="kn">import</span> <span class="n">AuthenticationForm</span>
+
+<span class="k">class</span> <span class="nc">RADIUSAuthenticationForm</span><span class="p">(</span><span class="n">AuthenticationForm</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">realm</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">UserAuthenticationForm</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">realm</span> <span class="o">=</span> <span class="n">realm</span>
+
+    <span class="k">def</span> <span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cleaned_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">'username'</span><span class="p">)</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cleaned_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">'password'</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">realm</span> <span class="ow">and</span> <span class="n">username</span> <span class="ow">and</span> <span class="n">password</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">user_cache</span> <span class="o">=</span> <span class="n">authenticate</span><span class="p">(</span><span class="n">realm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">realm</span><span class="p">,</span>
+                                           <span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span>
+                                           <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_cache</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">forms</span><span class="o">.</span><span class="n">ValidationError</span><span class="p">(</span>
+                    <span class="s">'Please enter a correct username and password. '</span>
+                    <span class="s">'Note that both fields are case-sensitive.'</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_cache</span><span class="o">.</span><span class="n">is_active</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">forms</span><span class="o">.</span><span class="n">ValidationError</span><span class="p">(</span><span class="s">'This account is inactive.'</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_for_test_cookie</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cleaned_data</span>
+
+    <span class="k">def</span> <span class="nf">get_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_cache</span>
+</pre></div>
+
+<p><code>myproject/users/urls.py</code></p>
+
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.conf.urls.defaults</span> <span class="kn">import</span> <span class="n">patterns</span><span class="p">,</span> <span class="n">url</span>
+
+<span class="kn">from</span> <span class="nn">myproject.users.forms</span> <span class="kn">import</span> <span class="n">RADIUSAuthenticationForm</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="n">patterns</span><span class="p">(</span><span class="s">'django.contrib.auth.views'</span><span class="p">,</span>
+
+    <span class="n">url</span><span class="p">(</span><span class="s">r'^login/$'</span><span class="p">,</span> <span class="s">'login'</span><span class="p">,</span>
+        <span class="p">{</span><span class="s">'authentication_form'</span><span class="p">:</span> <span class="n">RADIUSAuthenticationForm</span><span class="p">},</span>
+        <span class="n">name</span><span class="o">=</span><span class="s">'radius_login'</span><span class="p">),</span>
+
+<span class="p">)</span>
+</pre></div>
+
+<p><code>myproject/settings.py</code></p>
+
+<div class="highlight"><pre><span class="o">...</span>
+<span class="n">AUTHENTICATION_BACKENDS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s">'myproject.users.backends.MyRADIUSBackend'</span><span class="p">,</span>
+    <span class="s">'django.contrib.auth.backends.ModelBackend'</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="o">...</span>
+</pre></div>
+
+<p>The custom authentication form above is then instantiated with a <code>realm</code>
+argument (determined by some other means) which is then passed to Django's
+<code>authenticate</code> method. The <code>RADIUSRealmBackend</code> can then use this value to
+determine which RADIUS server to use when validating the user's credentials.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Django RADIUS maintained by <a href="https://github.com/robgolding63">robgolding63</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
