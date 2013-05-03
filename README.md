@@ -64,7 +64,7 @@ The realm is used to determine which RADIUS server to contact when verifying
 the user's credentials - though this logic is up to the developer to implement
 by overriding the `get_server` method.
 
-As with thee standard RADIUS backend, a `User` object is created in the Django
+As with the standard RADIUS backend, a `User` object is created in the Django
 auth application when a user successfully logs into the system. With the
 realm-based backend, however, the username is set to the string returned by the
 `construct_full_username` method, which is supplied with the username and the
