@@ -18,17 +18,8 @@ REALM_SEPARATOR = '@'
 def utf8_encode_args(f):
     """Decorator to encode string arguments as UTF-8"""
     def encoded(self, *args, **kwargs):
-        nargs = [ arg.encode('utf-8') for arg in args ]
-        nargs = []
-        for arg in args:
-            if isinstance(arg, basestring):
-                arg = arg.encode('utf-8')
-            nargs.append(arg)
-        nkwargs = {}
-        for key, val in kwargs.items():
-            if isinstance(val, basestring):
-                val = val.encode('utf-8')
-            nkwargs[key] = val
+        nargs = map(lambda x: x.encode('utf-8') if isinstance(x, basestring) else x, args)
+        nkwargs = dict(map(lambda x: (x[0], x[1].encode('utf-8') if isinstance(x[1], basestring) else x[1]), kwargs.iteritems()))
         return f(self, *nargs, **nkwargs)
     return encoded
 
