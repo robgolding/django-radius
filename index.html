@@ -31,18 +31,20 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <h1>Welcome</h1>
+        <h1>
+<a name="django-radius" class="anchor" href="#django-radius"><span class="octicon octicon-link"></span></a>django-radius</h1>
 
 <p>django-radius enables you to authenticate your Django users against one or many
 RADIUS servers easily.</p>
 
-<h2>RADIUS Authentication Backend</h2>
+<h2>
+<a name="radius-authentication-backend" class="anchor" href="#radius-authentication-backend"><span class="octicon octicon-link"></span></a>RADIUS Authentication Backend</h2>
 
 <p>The standard RADIUS backend (<code>radiusauth.backends.RADIUSBackend</code>) allows you to
 authenticate against a single RADIUS server easily, and is used by adding it to
 the <code>AUTHENTICATION_BACKENDS</code> parameter in your project's settings file:</p>
 
-<div class="highlight"><pre><span class="n">AUTHENTICATION_BACKENDS</span> <span class="o">=</span> <span class="p">(</span>
+<div class="highlight highlight-python"><pre><span class="n">AUTHENTICATION_BACKENDS</span> <span class="o">=</span> <span class="p">(</span>
     <span class="s">'radiusauth.backends.RADIUSBackend'</span><span class="p">,</span>
     <span class="s">'django.contrib.auth.backends.ModelBackend'</span><span class="p">,</span>
 <span class="p">)</span>
@@ -54,7 +56,7 @@ model-based system, and failing that, the RADIUS server.</p>
 <p>The RADIUS server is specified in the settings file also, with the following
 parameters:</p>
 
-<div class="highlight"><pre><span class="n">RADIUS_SERVER</span> <span class="o">=</span> <span class="s">'localhost'</span>
+<div class="highlight highlight-python"><pre><span class="n">RADIUS_SERVER</span> <span class="o">=</span> <span class="s">'localhost'</span>
 <span class="n">RADIUS_PORT</span> <span class="o">=</span> <span class="mi">1812</span>
 <span class="n">RADIUS_SECRET</span> <span class="o">=</span> <span class="s">'S3kr3T'</span>
 </pre></div>
@@ -74,7 +76,8 @@ updated).</p>
 <p>This is the quickest and easiest way to enable simple, single-server RADIUS
 authentication for your Django project.</p>
 
-<h2>Realm-Based RADIUS Authentication for Multiple RADIUS Servers</h2>
+<h2>
+<a name="realm-based-radius-authentication-for-multiple-radius-servers" class="anchor" href="#realm-based-radius-authentication-for-multiple-radius-servers"><span class="octicon octicon-link"></span></a>Realm-Based RADIUS Authentication for Multiple RADIUS Servers</h2>
 
 <p>For a more advanced system, you might want to authenticate users with different
 RADIUS servers, depending upon some arbitrary condition.</p>
@@ -92,7 +95,7 @@ The realm is used to determine which RADIUS server to contact when verifying
 the user's credentials - though this logic is up to the developer to implement
 by overriding the <code>get_server</code> method.</p>
 
-<p>As with thee standard RADIUS backend, a <code>User</code> object is created in the Django
+<p>As with the standard RADIUS backend, a <code>User</code> object is created in the Django
 auth application when a user successfully logs into the system. With the
 realm-based backend, however, the username is set to the string returned by the
 <code>construct_full_username</code> method, which is supplied with the username and the
@@ -102,7 +105,8 @@ aware of this fact when displaying usernames in templates etc., as users might
 be confused by a username which looks similar to an email address, but is
 clearly not.</p>
 
-<h3>Customised Functionality</h3>
+<h3>
+<a name="customised-functionality" class="anchor" href="#customised-functionality"><span class="octicon octicon-link"></span></a>Customised Functionality</h3>
 
 <p>The <code>get_server</code> method of the backend class is used to determine which RADIUS
 server to authenticate against. This can be customised by extending the
@@ -115,20 +119,21 @@ specified in the project's settings file.</p>
 <p>To use your customised version of the <code>RADIUSRealmBackend</code>, just specify it in
 your settings file as above:</p>
 
-<div class="highlight"><pre><span class="n">AUTHENTICATION_BACKENDS</span> <span class="o">=</span> <span class="p">(</span>
+<div class="highlight highlight-python"><pre><span class="n">AUTHENTICATION_BACKENDS</span> <span class="o">=</span> <span class="p">(</span>
     <span class="s">'myproject.users.MyRADIUSBackend'</span><span class="p">,</span>
     <span class="s">'django.contrib.auth.backends.ModelBackend'</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 
-<h3>Example Project</h3>
+<h3>
+<a name="example-project" class="anchor" href="#example-project"><span class="octicon octicon-link"></span></a>Example Project</h3>
 
 <p>Here is an example of how a project might be constructed to authenticate to two
 different RADIUS servers.</p>
 
 <p><code>myproject/users/backends.py</code></p>
 
-<div class="highlight"><pre><span class="kn">from</span> <span class="nn">radiusauth.backends</span> <span class="kn">import</span> <span class="n">RADIUSRealmBackend</span>
+<div class="highlight highlight-python"><pre><span class="kn">from</span> <span class="nn">radiusauth.backends</span> <span class="kn">import</span> <span class="n">RADIUSRealmBackend</span>
 
 <span class="n">RADIUS_SERVERS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s">'client1.myproject.com'</span><span class="p">:</span> <span class="p">(</span><span class="s">'radius.client1.com'</span><span class="p">,</span> <span class="mi">1812</span><span class="p">,</span> <span class="s">'S3kr3T'</span><span class="p">),</span>
@@ -144,7 +149,7 @@ different RADIUS servers.</p>
 
 <p><code>myproject/users/forms.py</code></p>
 
-<div class="highlight"><pre><span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
+<div class="highlight highlight-python"><pre><span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
 
 <span class="kn">from</span> <span class="nn">django.contrib.auth</span> <span class="kn">import</span> <span class="n">authenticate</span>
 <span class="kn">from</span> <span class="nn">django.contrib.auth.forms</span> <span class="kn">import</span> <span class="n">AuthenticationForm</span>
@@ -177,7 +182,7 @@ different RADIUS servers.</p>
 
 <p><code>myproject/users/urls.py</code></p>
 
-<div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.conf.urls.defaults</span> <span class="kn">import</span> <span class="n">patterns</span><span class="p">,</span> <span class="n">url</span>
+<div class="highlight highlight-python"><pre><span class="kn">from</span> <span class="nn">django.conf.urls.defaults</span> <span class="kn">import</span> <span class="n">patterns</span><span class="p">,</span> <span class="n">url</span>
 
 <span class="kn">from</span> <span class="nn">myproject.users.forms</span> <span class="kn">import</span> <span class="n">RADIUSAuthenticationForm</span>
 
@@ -192,7 +197,7 @@ different RADIUS servers.</p>
 
 <p><code>myproject/settings.py</code></p>
 
-<div class="highlight"><pre><span class="o">...</span>
+<div class="highlight highlight-python"><pre><span class="o">...</span>
 <span class="n">AUTHENTICATION_BACKENDS</span> <span class="o">=</span> <span class="p">(</span>
     <span class="s">'myproject.users.backends.MyRADIUSBackend'</span><span class="p">,</span>
     <span class="s">'django.contrib.auth.backends.ModelBackend'</span><span class="p">,</span>
@@ -204,6 +209,32 @@ different RADIUS servers.</p>
 argument (determined by some other means) which is then passed to Django's
 <code>authenticate</code> method. The <code>RADIUSRealmBackend</code> can then use this value to
 determine which RADIUS server to use when validating the user's credentials.</p>
+
+<h2>
+<a name="additional-attributes" class="anchor" href="#additional-attributes"><span class="octicon octicon-link"></span></a>Additional Attributes</h2>
+
+<p>The RADIUS authentication packet contains the following attributes by default:</p>
+
+<ul>
+<li>
+<code>User-Name</code> (the user's username)</li>
+<li>
+<code>User-Password</code> (the user's password)</li>
+<li>
+<code>NAS-Identifier</code> (<code>django-radius</code>)</li>
+</ul><p>To set additional attributes, use the <code>RADIUS_ATTRIBUTES</code> setting:</p>
+
+<div class="highlight highlight-python"><pre><span class="o">...</span>
+<span class="n">RADIUS_ATTRIBUTES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">"NAS-IP-Address"</span><span class="p">:</span> <span class="s">"192.168.1.10"</span><span class="p">,</span>
+    <span class="s">"NAS-Port"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s">"Service-Type"</span><span class="p">:</span> <span class="s">"Login-User"</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="o">...</span>
+</pre></div>
+
+<p>RADIUS attribute types 1-39 are supported. See the <a href="http://www.iana.org/assignments/radius-types/radius-types.xhtml">Radius Types</a>
+IANA page for details.</p>
       </section>
     </div>
 
