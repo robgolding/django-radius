@@ -93,6 +93,8 @@ class RADIUSBackend(object):
                                       User_Name=username)
         pkt["User-Password"] = pkt.PwCrypt(password)
         pkt["NAS-Identifier"] = 'django-radius'
+        for key, val in getattr(settings, 'RADIUS_ATTRIBUTES', {}).items():
+            pkt[key] = val
         return pkt
 
     def _get_client(self, server):
