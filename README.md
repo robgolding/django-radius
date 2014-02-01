@@ -181,3 +181,29 @@ The custom authentication form above is then instantiated with a `realm`
 argument (determined by some other means) which is then passed to Django's
 `authenticate` method. The `RADIUSRealmBackend` can then use this value to
 determine which RADIUS server to use when validating the user's credentials.
+
+Additional Attributes
+---------------------
+
+The RADIUS authentication packet contains the following attributes by default:
+
+* `User-Name` (the user's username)
+* `User-Password` (the user's password)
+* `NAS-Identifier` (`django-radius`)
+
+To set additional attributes, use the `RADIUS_ATTRIBUTES` setting:
+
+```python
+...
+RADIUS_ATTRIBUTES = {
+    "NAS-IP-Address": "192.168.1.10",
+    "NAS-Port": 0,
+    "Service-Type": "Login-User",
+}
+...
+```
+
+RADIUS attribute types 1-39 are supported. See the [Radius Types][types]
+IANA page for details.
+
+[types]: http://www.iana.org/assignments/radius-types/radius-types.xhtml

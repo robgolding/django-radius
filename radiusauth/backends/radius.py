@@ -9,16 +9,52 @@ from django.conf import settings
 from django.contrib.auth.models import User
 
 DICTIONARY = u"""
-ATTRIBUTE User-Name     1 string
-ATTRIBUTE User-Password 2 string encrypt=1
+ATTRIBUTE   User-Name       1   string
+ATTRIBUTE   User-Password       2   string
+ATTRIBUTE   CHAP-Password       3   octets
+ATTRIBUTE   NAS-IP-Address      4   ipaddr
+ATTRIBUTE   NAS-Port        5   integer
+ATTRIBUTE   Service-Type        6   integer
+ATTRIBUTE   Framed-Protocol     7   integer
+ATTRIBUTE   Framed-IP-Address   8   ipaddr
+ATTRIBUTE   Framed-IP-Netmask   9   ipaddr
+ATTRIBUTE   Framed-Routing      10  integer
+ATTRIBUTE   Filter-Id       11  string
+ATTRIBUTE   Framed-MTU      12  integer
+ATTRIBUTE   Framed-Compression  13  integer
+ATTRIBUTE   Login-IP-Host       14  ipaddr
+ATTRIBUTE   Login-Service       15  integer
+ATTRIBUTE   Login-TCP-Port      16  integer
+ATTRIBUTE   Reply-Message       18  string
+ATTRIBUTE   Callback-Number     19  string
+ATTRIBUTE   Callback-Id     20  string
+ATTRIBUTE   Framed-Route        22  string
+ATTRIBUTE   Framed-IPX-Network  23  ipaddr
+ATTRIBUTE   State           24  octets
+ATTRIBUTE   Class           25  octets
+ATTRIBUTE   Vendor-Specific     26  octets
+ATTRIBUTE   Session-Timeout     27  integer
+ATTRIBUTE   Idle-Timeout        28  integer
+ATTRIBUTE   Termination-Action  29  integer
+ATTRIBUTE   Called-Station-Id   30  string
+ATTRIBUTE   Calling-Station-Id  31  string
+ATTRIBUTE   NAS-Identifier      32  string
+ATTRIBUTE   Proxy-State     33  octets
+ATTRIBUTE   Login-LAT-Service   34  string
+ATTRIBUTE   Login-LAT-Node      35  string
+ATTRIBUTE   Login-LAT-Group     36  octets
+ATTRIBUTE   Framed-AppleTalk-Link   37  integer
+ATTRIBUTE   Framed-AppleTalk-Network 38 integer
+ATTRIBUTE   Framed-AppleTalk-Zone   39  string
 """
 
 REALM_SEPARATOR = '@'
 
+
 def utf8_encode_args(f):
     """Decorator to encode string arguments as UTF-8"""
     def encoded(self, *args, **kwargs):
-        nargs = [ arg.encode('utf-8') for arg in args ]
+        nargs = [arg.encode('utf-8') for arg in args]
         nargs = []
         for arg in args:
             if isinstance(arg, basestring):
@@ -31,6 +67,7 @@ def utf8_encode_args(f):
             nkwargs[key] = val
         return f(self, *nargs, **nkwargs)
     return encoded
+
 
 class RADIUSBackend(object):
     """
@@ -55,6 +92,9 @@ class RADIUSBackend(object):
         pkt = client.CreateAuthPacket(code=AccessRequest,
                                       User_Name=username)
         pkt["User-Password"] = pkt.PwCrypt(password)
+        pkt["NAS-Identifier"] = 'django-radius'
+        for key, val in getattr(settings, 'RADIUS_ATTRIBUTES', {}).items():
+            pkt[key] = val
         return pkt
 
     def _get_client(self, server):
@@ -65,8 +105,7 @@ class RADIUSBackend(object):
         return Client(server=server[0],
                       authport=server[1],
                       secret=server[2],
-                      dict=self._get_dictionary(),
-                     )
+                      dict=self._get_dictionary())
 
     def _get_server_from_settings(self):
         """
@@ -88,26 +127,24 @@ class RADIUSBackend(object):
         try:
             reply = client.SendPacket(packet)
         except Timeout, e:
-            logging.error("RADIUS timeout occurred contacting %s:%s" % \
-                          (client.server, client.authport)
-                         )
+            logging.error("RADIUS timeout occurred contacting %s:%s" % (
+                client.server, client.authport))
             return False
         except Exception, e:
             logging.error("RADIUS error: %s" % e)
             return False
 
         if reply.code == AccessReject:
-            logging.warning("RADIUS access rejected for user '%s'" % \
-                            packet['User-Name'])
+            logging.warning("RADIUS access rejected for user '%s'" % (
+                packet['User-Name']))
             return False
         elif reply.code != AccessAccept:
-            logging.error("RADIUS access error for user '%s' (code %s)" % \
-                          (packet['User-Name'], reply.code)
-                         )
+            logging.error("RADIUS access error for user '%s' (code %s)" % (
+                packet['User-Name'], reply.code))
             return False
 
-        logging.info("RADIUS access granted for user '%s'" % \
-                     packet['User-Name'])
+        logging.info("RADIUS access granted for user '%s'" % (
+            packet['User-Name']))
         return True
 
     def _radius_auth(self, server, username, password):
@@ -159,6 +196,7 @@ class RADIUSBackend(object):
             return User.objects.get(pk=user_id)
         except User.DoesNotExist:
             return None
+
 
 class RADIUSRealmBackend(RADIUSBackend):
     """
