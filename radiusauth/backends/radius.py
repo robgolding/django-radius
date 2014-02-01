@@ -50,10 +50,11 @@ ATTRIBUTE   Framed-AppleTalk-Zone   39  string
 
 REALM_SEPARATOR = '@'
 
+
 def utf8_encode_args(f):
     """Decorator to encode string arguments as UTF-8"""
     def encoded(self, *args, **kwargs):
-        nargs = [ arg.encode('utf-8') for arg in args ]
+        nargs = [arg.encode('utf-8') for arg in args]
         nargs = []
         for arg in args:
             if isinstance(arg, basestring):
@@ -66,6 +67,7 @@ def utf8_encode_args(f):
             nkwargs[key] = val
         return f(self, *nargs, **nkwargs)
     return encoded
+
 
 class RADIUSBackend(object):
     """
@@ -101,8 +103,7 @@ class RADIUSBackend(object):
         return Client(server=server[0],
                       authport=server[1],
                       secret=server[2],
-                      dict=self._get_dictionary(),
-                     )
+                      dict=self._get_dictionary())
 
     def _get_server_from_settings(self):
         """
@@ -124,26 +125,24 @@ class RADIUSBackend(object):
         try:
             reply = client.SendPacket(packet)
         except Timeout, e:
-            logging.error("RADIUS timeout occurred contacting %s:%s" % \
-                          (client.server, client.authport)
-                         )
+            logging.error("RADIUS timeout occurred contacting %s:%s" % (
+                client.server, client.authport))
             return False
         except Exception, e:
             logging.error("RADIUS error: %s" % e)
             return False
 
         if reply.code == AccessReject:
-            logging.warning("RADIUS access rejected for user '%s'" % \
-                            packet['User-Name'])
+            logging.warning("RADIUS access rejected for user '%s'" % (
+                packet['User-Name']))
             return False
         elif reply.code != AccessAccept:
-            logging.error("RADIUS access error for user '%s' (code %s)" % \
-                          (packet['User-Name'], reply.code)
-                         )
+            logging.error("RADIUS access error for user '%s' (code %s)" % (
+                packet['User-Name'], reply.code))
             return False
 
-        logging.info("RADIUS access granted for user '%s'" % \
-                     packet['User-Name'])
+        logging.info("RADIUS access granted for user '%s'" % (
+            packet['User-Name']))
         return True
 
     def _radius_auth(self, server, username, password):
@@ -195,6 +194,7 @@ class RADIUSBackend(object):
             return User.objects.get(pk=user_id)
         except User.DoesNotExist:
             return None
+
 
 class RADIUSRealmBackend(RADIUSBackend):
     """
