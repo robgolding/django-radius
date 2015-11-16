@@ -8,7 +8,7 @@ setup(
     author_email='rob@robgolding.com',
     description='Django authentication backend for RADIUS',
     version=VERSION,
-    license='GPL',
+    license='BSD',
     url='http://robgolding63.github.com/django-radius/',
     classifiers=[
         'Programming Language :: Python',
