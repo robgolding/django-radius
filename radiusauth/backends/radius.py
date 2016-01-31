@@ -6,7 +6,9 @@ from pyrad.client import Client, Timeout
 from pyrad.dictionary import Dictionary
 
 from django.conf import settings
-from django.contrib.auth.models import User
+#Handle custom user models
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 DICTIONARY = u"""
 ATTRIBUTE   User-Name       1   string
