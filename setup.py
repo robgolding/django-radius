@@ -12,6 +12,7 @@ setup(
     url='http://robgolding63.github.com/django-radius/',
     classifiers=[
         'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
         'Framework :: Django',
         'Intended Audience :: Developers',
         'Operating System :: OS Independent',
