@@ -1,5 +1,9 @@
+from future import standard_library
+standard_library.install_aliases()
+from past.builtins import basestring
+from builtins import object
 import logging
-from StringIO import StringIO
+from io import StringIO
 
 from pyrad.packet import AccessRequest, AccessAccept, AccessReject
 from pyrad.client import Client, Timeout
@@ -63,7 +67,7 @@ def utf8_encode_args(f):
                 arg = arg.encode('utf-8')
             nargs.append(arg)
         nkwargs = {}
-        for key, val in kwargs.items():
+        for key, val in list(kwargs.items()):
             if isinstance(val, basestring):
                 val = val.encode('utf-8')
             nkwargs[key] = val
@@ -95,7 +99,7 @@ class RADIUSBackend(object):
                                       User_Name=username)
         pkt["User-Password"] = pkt.PwCrypt(password)
         pkt["NAS-Identifier"] = 'django-radius'
-        for key, val in getattr(settings, 'RADIUS_ATTRIBUTES', {}).items():
+        for key, val in list(getattr(settings, 'RADIUS_ATTRIBUTES', {}).items()):
             pkt[key] = val
         return pkt
 
@@ -128,11 +132,11 @@ class RADIUSBackend(object):
         """
         try:
             reply = client.SendPacket(packet)
-        except Timeout, e:
+        except Timeout as e:
             logging.error("RADIUS timeout occurred contacting %s:%s" % (
                 client.server, client.authport))
             return False
-        except Exception, e:
+        except Exception as e:
             logging.error("RADIUS error: %s" % e)
             return False
 
