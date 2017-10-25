@@ -57,24 +57,6 @@ ATTRIBUTE   Framed-AppleTalk-Zone   39  string
 REALM_SEPARATOR = '@'
 
 
-def utf8_encode_args(f):
-    """Decorator to encode string arguments as UTF-8"""
-    def encoded(self, *args, **kwargs):
-        nargs = [arg.encode('utf-8') for arg in args]
-        nargs = []
-        for arg in args:
-            if isinstance(arg, basestring):
-                arg = arg.encode('utf-8')
-            nargs.append(arg)
-        nkwargs = {}
-        for key, val in list(kwargs.items()):
-            if isinstance(val, basestring):
-                val = val.encode('utf-8')
-            nkwargs[key] = val
-        return f(self, *nargs, **nkwargs)
-    return encoded
-
-
 class RADIUSBackend(object):
     """
     Standard RADIUS authentication backend for Django. Uses the server details
@@ -179,12 +161,17 @@ class RADIUSBackend(object):
 
         return user
 
-    @utf8_encode_args
-    def authenticate(self, username, password):
+    def authenticate(self, request, username=None, password=None):
         """
         Check credentials against RADIUS server and return a User object or
         None.
         """
+        if isinstance(username, basestring):
+            username = username.encode('utf-8')
+
+        if isinstance(password, basestring):
+            password = password.encode('utf-8')
+
         server = self._get_server_from_settings()
         result = self._radius_auth(server, username, password)
 
