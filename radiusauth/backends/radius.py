@@ -78,6 +78,7 @@ class RADIUSBackend(object):
         given pyrad client.
         """
         pkt = client.CreateAuthPacket(code=AccessRequest,
+                                      secret=b'',
                                       User_Name=username)
         pkt["User-Password"] = pkt.PwCrypt(password)
         pkt["NAS-Identifier"] = 'django-radius'
@@ -224,7 +225,6 @@ class RADIUSRealmBackend(RADIUSBackend):
         """
         return '%s@%s' % (username, realm)
 
-    @utf8_encode_args
     def authenticate(self, username, password, realm):
         """
         Check credentials against the RADIUS server identified by `realm` and
