@@ -90,19 +90,23 @@ class RADIUSBackend(object):
         Get the pyrad client for a given server. RADIUS server is described by
         a 3-tuple: (<hostname>, <port>, <secret>).
         """
-        return Client(server=server[0],
-                      authport=server[1],
-                      secret=server[2],
-                      dict=self._get_dictionary())
+        return Client(
+            server=server[0],
+            authport=server[1],
+            secret=server[2],
+            dict=self._get_dictionary(),
+        )
 
     def _get_server_from_settings(self):
         """
         Get the RADIUS server details from the settings file.
         """
-        return (
-            settings.RADIUS_SERVER,
-            settings.RADIUS_PORT,
-            settings.RADIUS_SECRET
+        return tuple(
+            s.encode('utf-8') for s in [
+                settings.RADIUS_SERVER,
+                settings.RADIUS_PORT,
+                settings.RADIUS_SECRET,
+            ]
         )
 
     def _perform_radius_auth(self, client, packet):
