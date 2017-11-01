@@ -224,14 +224,19 @@ class RADIUSRealmBackend(RADIUSBackend):
         """
         return '%s@%s' % (username, realm)
 
-    @utf8_encode_args
-    def authenticate(self, username, password, realm):
+    def authenticate(self, request, username=None, password=None, realm=None):
         """
         Check credentials against the RADIUS server identified by `realm` and
         return a User object or None. If no argument is supplied, Django will
         skip this backend and try the next one (as a TypeError will be raised
         and caught).
         """
+        if isinstance(username, basestring):
+            username = username.encode('utf-8')
+
+        if isinstance(password, basestring):
+            password = password.encode('utf-8')
+
         server = self.get_server(realm)
 
         if not server:
