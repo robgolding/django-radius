@@ -101,12 +101,10 @@ class RADIUSBackend(object):
         """
         Get the RADIUS server details from the settings file.
         """
-        return tuple(
-            s.encode('utf-8') for s in [
-                settings.RADIUS_SERVER,
-                settings.RADIUS_PORT,
-                settings.RADIUS_SECRET,
-            ]
+        return (
+            settings.RADIUS_SERVER,
+            settings.RADIUS_PORT,
+            settings.RADIUS_SECRET.encode('utf-8'),
         )
 
     def _perform_radius_auth(self, client, packet):
