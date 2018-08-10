@@ -12,6 +12,7 @@ from pyrad.dictionary import Dictionary
 from django.conf import settings
 #Handle custom user models
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 User = get_user_model()
 
 DICTIONARY = u"""
@@ -111,7 +112,7 @@ class RADIUSBackend(object):
         """
         Perform the actual radius authentication by passing the given packet
         to the server which `client` is bound to.
-        Returns True or False depending on whether the user is authenticated
+        Returns a tuple (list of groups, is_staff, is_superuser) or None depending on whether the user is authenticated
         successfully.
         """
         try:
@@ -119,23 +120,44 @@ class RADIUSBackend(object):
         except Timeout as e:
             logging.error("RADIUS timeout occurred contacting %s:%s" % (
                 client.server, client.authport))
-            return False
+            return None
         except Exception as e:
             logging.error("RADIUS error: %s" % e)
-            return False
+            return None
 
         if reply.code == AccessReject:
             logging.warning("RADIUS access rejected for user '%s'" % (
                 packet['User-Name']))
-            return False
+            return None
         elif reply.code != AccessAccept:
             logging.error("RADIUS access error for user '%s' (code %s)" % (
                 packet['User-Name'], reply.code))
-            return False
+            return None
 
         logging.info("RADIUS access granted for user '%s'" % (
             packet['User-Name']))
-        return True
+        
+        if not "Class" in reply.keys():
+            return [], False, False
+
+        groups = []
+        is_staff = False
+        is_superuser = False
+        
+        
+        for cl in reply['Class']:
+            cl = cl.decode("utf-8")
+            if cl.lower().find("group=") == 0:
+                groups.append(cl[6:])
+            elif cl.lower().find("role=") == 0:
+                role = cl[5:]
+                if role == "staff":
+                    is_staff = True
+                elif role == "superuser":
+                    is_superuser = True
+                else:
+                    logging.warning("RADIUS Attribute Class contains unknown role '%s'. Only roles 'staff' and 'superuser' are allowed" % cl)
+        return groups, is_staff, is_superuser
 
     def _radius_auth(self, server, username, password):
         """
@@ -146,7 +168,7 @@ class RADIUSBackend(object):
         packet = self._get_auth_packet(username, password, client)
         return self._perform_radius_auth(client, packet)
 
-    def get_django_user(self, username, password=None):
+    def get_django_user(self, username, password=None, groups=[], is_staff=False, is_superuser=False):
         """
         Get the Django user with the given username, or create one if it
         doesn't already exist. If `password` is given, then set the user's
@@ -157,11 +179,22 @@ class RADIUSBackend(object):
         except User.DoesNotExist:
             user = User(username=username)
 
+        user.is_staff = is_staff
+        user.is_superuser = is_superuser
         if password is not None:
             user.set_password(password)
-            user.save()
-
+        
+        user.save()
+        user.groups.set(groups)
         return user
+
+    def get_user_groups(self, group_names):
+        groups = Group.objects.filter(name__in=group_names)
+        if len(groups) != len(group_names):
+            local_group_names = [g.name for g in groups]
+            logging.warning("RADIUS reply contains %d user groups (%s), but only %d (%s) found" % (
+                len(group_names), ", ".join(group_names), len(groups), ", ".join(local_group_names)))
+        return groups
 
     def authenticate(self, request, username=None, password=None):
         """
@@ -178,7 +211,9 @@ class RADIUSBackend(object):
         result = self._radius_auth(server, username, password)
 
         if result:
-            return self.get_django_user(username, password)
+            group_names, is_staff, is_superuser = result
+            groups = self.get_user_groups(group_names)
+            return self.get_django_user(username, password, groups, is_staff, is_superuser)
 
         return None
 
@@ -248,6 +283,8 @@ class RADIUSRealmBackend(RADIUSBackend):
 
         if result:
             full_username = self.construct_full_username(username, realm)
-            return self.get_django_user(full_username, password)
+            group_names, is_staff, is_superuser = result
+            groups = self.get_user_groups(group_names)
+            return self.get_django_user(full_username, password, groups, is_staff, is_superuser)
 
         return None
