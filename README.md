@@ -219,6 +219,6 @@ For each role (is_staff and is_superuser) and group mapping one RAIDUS Attribute
 25 "Class" AVP has to be returned by the RADIUS Server.
 
 The syntax allows the following mappings:
-* `role=staff` (sets the is_staff=True in the User object)
+* `role=staff` (sets is_staff=True in the User object)
 * `role=superuser` (sets is_superuser=True for the User object)
 * `group=Group1` (add the User object to `Group1`)
