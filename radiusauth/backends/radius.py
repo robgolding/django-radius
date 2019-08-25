@@ -201,11 +201,6 @@ class RADIUSBackend(object):
         Check credentials against RADIUS server and return a User object or
         None.
         """
-        if isinstance(username, basestring):
-            username = username.encode('utf-8')
-
-        if isinstance(password, basestring):
-            password = password.encode('utf-8')
 
         server = self._get_server_from_settings()
         result = self._radius_auth(server, username, password)
@@ -268,11 +263,6 @@ class RADIUSRealmBackend(RADIUSBackend):
         skip this backend and try the next one (as a TypeError will be raised
         and caught).
         """
-        if isinstance(username, basestring):
-            username = username.encode('utf-8')
-
-        if isinstance(password, basestring):
-            password = password.encode('utf-8')
 
         server = self.get_server(realm)
 
