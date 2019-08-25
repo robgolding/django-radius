@@ -230,6 +230,7 @@ settings.py for the values returned by the RADIUS server in the Attribute 25
 
 ```python
 RADIUS_CLASS_APP_PREFIX = 'someprojectname'
+```
 
 This will make the app look for `someprojectnamerole=` and `someprojectnamegroup=`
 when parsing through the Attribute 25 "Class" AVP and ignore other returned values.
