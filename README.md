@@ -222,3 +222,14 @@ The syntax allows the following mappings:
 * `role=staff` (sets is_staff=True in the User object)
 * `role=superuser` (sets is_superuser=True for the User object)
 * `group=Group1` (add the User object to `Group1`)
+
+To avoid namespace clashes in the RADIUS Attribute 25 values that may be
+used by other applications, a prefix can be configured in the Django project's
+settings.py for the values returned by the RADIUS server in the Attribute 25
+"Class" AVP:
+
+```python
+RADIUS_CLASS_APP_PREFIX = 'someprojectname'
+
+This will make the app look for `someprojectnamerole=` and `someprojectnamegroup=`
+when parsing through the Attribute 25 "Class" AVP and ignore other returned values.

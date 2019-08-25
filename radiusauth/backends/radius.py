@@ -144,13 +144,16 @@ class RADIUSBackend(object):
         is_staff = False
         is_superuser = False
         
+        app_class_prefix = getattr(settings, 'RADIUS_CLASS_APP_PREFIX', '')
+        group_class_prefix = app_class_prefix + "group="
+        role_class_prefix = app_class_prefix + "role="
         
         for cl in reply['Class']:
             cl = cl.decode("utf-8")
-            if cl.lower().find("group=") == 0:
-                groups.append(cl[6:])
-            elif cl.lower().find("role=") == 0:
-                role = cl[5:]
+            if cl.lower().find(group_class_prefix) == 0:
+                groups.append(cl[len(group_class_prefix):])
+            elif cl.lower().find(role_class_prefix) == 0:
+                role = cl[len(role_class_prefix):]
                 if role == "staff":
                     is_staff = True
                 elif role == "superuser":
