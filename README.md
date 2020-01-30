@@ -30,6 +30,14 @@ RADIUS_PORT = 1812
 RADIUS_SECRET = 'S3kr3T'
 ```
 
+You may optionally accept whether the user is a staff or superuser from the
+remote radius server with the following option. If not set, it will default
+to `True`, as django-radius has functioned in earlier versions.
+
+```python
+RADIUS_REMOTE_ROLES = True
+```
+
 When a user is successfully authenticated via the RADIUS backend, a `User`
 object is created in Django's built-in auth application with the same username.
 This user's password is set to the password which they logged into the RADIUS
