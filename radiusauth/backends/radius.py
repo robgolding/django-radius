@@ -182,8 +182,14 @@ class RADIUSBackend(object):
         except User.DoesNotExist:
             user = User(username=username)
 
-        user.is_staff = is_staff
-        user.is_superuser = is_superuser
+        # if RADIUS_REMOTE_ROLES is not set, configure it to the default value
+        # of versions <= 1.4.0
+        if not hasattr(settings, "RADIUS_REMOTE_ROLES"):
+            settings.RADIUS_REMOTE_ROLES = True
+
+        if settings.RADIUS_REMOTE_ROLES:
+            user.is_staff = is_staff
+            user.is_superuser = is_superuser
         if password is not None:
             user.set_password(password)
         

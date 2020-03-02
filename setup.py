@@ -19,5 +19,5 @@ setup(
     ],
     zip_safe=False,
     packages=find_packages(),
-    install_requires=['pyrad >= 1.2', 'future==0.16.0'],
+    install_requires=['pyrad >= 1.2,!=2.2', 'future==0.16.0'],
 )
