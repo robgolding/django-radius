@@ -101,7 +101,7 @@ class RADIUSBackend(object):
         """
         return (
             settings.RADIUS_SERVER,
-            settings.RADIUS_PORT,
+            int(settings.RADIUS_PORT),
             settings.RADIUS_SECRET.encode('utf-8'),
         )
 
