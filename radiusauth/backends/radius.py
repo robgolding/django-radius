@@ -1,6 +1,3 @@
-from future import standard_library
-standard_library.install_aliases()
-from past.builtins import basestring
 from builtins import object
 import logging
 from io import StringIO
@@ -136,18 +133,18 @@ class RADIUSBackend(object):
 
         logging.info("RADIUS access granted for user '%s'" % (
             packet['User-Name']))
-        
+
         if not "Class" in reply.keys():
             return [], False, False
 
         groups = []
         is_staff = False
         is_superuser = False
-        
+
         app_class_prefix = getattr(settings, 'RADIUS_CLASS_APP_PREFIX', '')
         group_class_prefix = app_class_prefix + "group="
         role_class_prefix = app_class_prefix + "role="
-        
+
         for cl in reply['Class']:
             cl = cl.decode("utf-8")
             if cl.lower().find(group_class_prefix) == 0:
@@ -192,7 +189,7 @@ class RADIUSBackend(object):
             user.is_superuser = is_superuser
         if password is not None:
             user.set_password(password)
-        
+
         user.save()
         user.groups.set(groups)
         return user
