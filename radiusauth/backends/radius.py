@@ -105,6 +105,36 @@ class RADIUSBackend(object):
             settings.RADIUS_SECRET.encode('utf-8'),
         )
 
+    def _get_groups_from_auth_response(self, reply):
+        """
+        Get the groups from the RADIUS Attribute 25 "Class".
+        Returns a tuple (list of groups, is_staff, is_superuser).
+        """
+        if not "Class" in reply.keys():
+            return [], False, False
+
+        groups = []
+        is_staff = False
+        is_superuser = False
+
+        app_class_prefix = getattr(settings, 'RADIUS_CLASS_APP_PREFIX', '')
+        group_class_prefix = app_class_prefix + "group="
+        role_class_prefix = app_class_prefix + "role="
+
+        for cl in reply['Class']:
+            cl = cl.decode("utf-8")
+            if cl.lower().find(group_class_prefix) == 0:
+                groups.append(cl[len(group_class_prefix):])
+            elif cl.lower().find(role_class_prefix) == 0:
+                role = cl[len(role_class_prefix):]
+                if role == "staff":
+                    is_staff = True
+                elif role == "superuser":
+                    is_superuser = True
+                else:
+                    logging.warning("RADIUS Attribute Class contains unknown role '%s'. Only roles 'staff' and 'superuser' are allowed" % cl)
+        return groups, is_staff, is_superuser
+
     def _perform_radius_auth(self, client, packet):
         """
         Perform the actual radius authentication by passing the given packet
@@ -134,30 +164,7 @@ class RADIUSBackend(object):
         logging.info("RADIUS access granted for user '%s'" % (
             packet['User-Name']))
 
-        if not "Class" in reply.keys():
-            return [], False, False
-
-        groups = []
-        is_staff = False
-        is_superuser = False
-
-        app_class_prefix = getattr(settings, 'RADIUS_CLASS_APP_PREFIX', '')
-        group_class_prefix = app_class_prefix + "group="
-        role_class_prefix = app_class_prefix + "role="
-
-        for cl in reply['Class']:
-            cl = cl.decode("utf-8")
-            if cl.lower().find(group_class_prefix) == 0:
-                groups.append(cl[len(group_class_prefix):])
-            elif cl.lower().find(role_class_prefix) == 0:
-                role = cl[len(role_class_prefix):]
-                if role == "staff":
-                    is_staff = True
-                elif role == "superuser":
-                    is_superuser = True
-                else:
-                    logging.warning("RADIUS Attribute Class contains unknown role '%s'. Only roles 'staff' and 'superuser' are allowed" % cl)
-        return groups, is_staff, is_superuser
+        return self._get_groups_from_auth_response(reply)
 
     def _radius_auth(self, server, username, password):
         """
