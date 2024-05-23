@@ -229,6 +229,7 @@ For each role (is_staff and is_superuser) and group mapping one RAIDUS Attribute
 The syntax allows the following mappings:
 * `role=staff` (sets is_staff=True in the User object)
 * `role=superuser` (sets is_superuser=True for the User object)
+* `role=su-staff` (sets both is_superuser and is_staff = True for the User object)
 * `group=Group1` (add the User object to `Group1`)
 
 To avoid namespace clashes in the RADIUS Attribute 25 values that may be

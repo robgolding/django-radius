@@ -155,6 +155,11 @@ class RADIUSBackend(object):
                     is_staff = True
                 elif role == "superuser":
                     is_superuser = True
+                # Passing "su-staff" through the Class attribute from the RADIUS server
+                # will set both staff and superuser to true for the user.
+                elif role == "su-staff":
+                    is_staff = True
+                    is_superuser = True
                 else:
                     logging.warning("RADIUS Attribute Class contains unknown role '%s'. Only roles 'staff' and 'superuser' are allowed" % cl)
         return groups, is_staff, is_superuser
